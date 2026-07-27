@@ -2473,6 +2473,7 @@ a {
 
   .option-step {
     padding-top: 24px;
+    padding-bottom: calc(118px + env(safe-area-inset-bottom));
   }
 
   .intro-step {
@@ -2573,9 +2574,13 @@ a {
   }
 
   .bottom-actions {
-    position: sticky;
-    bottom: 12px;
-    margin-top: 22px;
+    position: fixed;
+    right: 20px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 20px;
+    width: auto;
+    max-width: 680px;
+    margin: 0 auto;
     padding: 10px;
     border: 0;
     border-radius: 17px;
