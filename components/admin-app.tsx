@@ -14,6 +14,9 @@ import {
   ArrowLeft,
   BarChart3,
   Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ImagePlus,
   LoaderCircle,
   LockKeyhole,
@@ -281,6 +284,112 @@ function WinnerLoop({ winners }: { winners: ResultItem[] }) {
   );
 }
 
+type ReasonDropdownOption = {
+  value: string;
+  label: string;
+  color?: string;
+};
+
+function ReasonDropdown({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: ReasonDropdownOption[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected =
+    options.find((option) => option.value === value) ??
+    options[0] ?? {
+      value: "",
+      label: "",
+    };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeWithEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="reason-dropdown" data-open={open}>
+      <button
+        className="reason-dropdown__trigger"
+        type="button"
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>
+          {selected.color && (
+            <i style={{ "--dropdown-color": selected.color } as CSSProperties} />
+          )}
+          {selected.label}
+        </span>
+        <ChevronDown size={15} aria-hidden="true" />
+      </button>
+      {open && (
+        <motion.div
+          className="reason-dropdown__menu"
+          role="listbox"
+          aria-label={label}
+          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.16, ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          {options.map((option) => {
+            const active = option.value === value;
+            return (
+              <button
+                key={option.value}
+                className="reason-dropdown__option"
+                type="button"
+                role="option"
+                aria-selected={active}
+                data-active={active}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+              >
+                <span>
+                  {option.color && (
+                    <i
+                      style={
+                        { "--dropdown-color": option.color } as CSSProperties
+                      }
+                    />
+                  )}
+                  {option.label}
+                </span>
+                {active && <Check size={15} strokeWidth={2.5} />}
+              </button>
+            );
+          })}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 function ResultsView() {
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -289,6 +398,8 @@ function ResultsView() {
   const [reasonOrder, setReasonOrder] = useState<"newest" | "oldest">(
     "newest",
   );
+  const [reasonPageSize, setReasonPageSize] = useState<10 | 20 | 50>(10);
+  const [reasonPage, setReasonPage] = useState(1);
 
   async function load(silent = false) {
     if (!silent) setLoading(true);
@@ -351,6 +462,15 @@ function ResultsView() {
       return reasonOrder === "newest" ? difference : -difference;
     });
   }, [data?.votes, reasonModel, reasonOrder]);
+  const totalReasonPages = Math.max(
+    1,
+    Math.ceil(visibleReasons.length / reasonPageSize),
+  );
+  const currentReasonPage = Math.min(reasonPage, totalReasonPages);
+  const paginatedReasons = visibleReasons.slice(
+    (currentReasonPage - 1) * reasonPageSize,
+    currentReasonPage * reasonPageSize,
+  );
 
   return (
     <div className="simple-results-content">
@@ -398,63 +518,122 @@ function ResultsView() {
             <h2>선정 사유</h2>
           </div>
           <div className="reason-list-tools">
-            <select
-              aria-label="모델별 선정 사유 필터"
+            <ReasonDropdown
+              label="모델별 선정 사유 필터"
               value={reasonModel}
-              onChange={(event) => setReasonModel(event.target.value)}
-            >
-              <option value="all">전체 모델</option>
-              {(data?.results ?? []).map((result) => (
-                <option key={result.option.id} value={result.option.id}>
-                  {result.option.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="선정 사유 정렬"
+              onChange={(next) => {
+                setReasonModel(next);
+                setReasonPage(1);
+              }}
+              options={[
+                { value: "all", label: "전체 모델" },
+                ...(data?.results ?? []).map((result) => ({
+                  value: result.option.id,
+                  label: result.option.name,
+                  color: result.option.color,
+                })),
+              ]}
+            />
+            <ReasonDropdown
+              label="선정 사유 정렬"
               value={reasonOrder}
-              onChange={(event) =>
-                setReasonOrder(event.target.value as "newest" | "oldest")
-              }
-            >
-              <option value="newest">최신순</option>
-              <option value="oldest">오래된순</option>
-            </select>
+              onChange={(next) => {
+                setReasonOrder(next as "newest" | "oldest");
+                setReasonPage(1);
+              }}
+              options={[
+                { value: "newest", label: "최신순" },
+                { value: "oldest", label: "오래된순" },
+              ]}
+            />
+            <ReasonDropdown
+              label="페이지당 선정 사유 수"
+              value={String(reasonPageSize)}
+              onChange={(next) => {
+                setReasonPageSize(Number(next) as 10 | 20 | 50);
+                setReasonPage(1);
+              }}
+              options={[
+                { value: "10", label: "10개씩" },
+                { value: "20", label: "20개씩" },
+                { value: "50", label: "50개씩" },
+              ]}
+            />
           </div>
         </div>
-        <div className="simple-reason-list">
-          {visibleReasons.length ? (
-            visibleReasons.map((vote, index) => {
-              const option = optionById.get(vote.optionId);
-              return (
-                <motion.article
-                  key={vote.submissionId}
-                  className="simple-reason"
-                  style={
-                    {
-                      "--reason-color": option?.color ?? "#7c8794",
-                    } as CSSProperties
-                  }
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(index * 0.035, 0.35) }}
-                >
-                  <div className="simple-reason__meta">
-                    <strong>{vote.nickname}</strong>
-                    <span>{vote.optionName}</span>
-                  </div>
-                  <p>{vote.reason}</p>
-                </motion.article>
-              );
-            })
-          ) : (
-            <div className="simple-empty">
-              {data?.votes.length
-                ? "선택한 모델의 선정 사유가 없습니다."
-                : "아직 등록된 선정 사유가 없습니다."}
-            </div>
-          )}
+        <div className="simple-reason-table">
+          <div className="simple-reason-table__header">
+            <span>이름</span>
+            <span>선정 모델</span>
+            <span>사유</span>
+          </div>
+          <div className="simple-reason-list">
+            {paginatedReasons.length ? (
+              paginatedReasons.map((vote, index) => {
+                const option = optionById.get(vote.optionId);
+                return (
+                  <motion.article
+                    key={vote.submissionId}
+                    className="simple-reason"
+                    style={
+                      {
+                        "--reason-color": option?.color ?? "#7c8794",
+                      } as CSSProperties
+                    }
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.035, 0.35) }}
+                  >
+                    <strong className="simple-reason__nickname">
+                      {vote.nickname}
+                    </strong>
+                    <span className="simple-reason__model">
+                      {vote.optionName}
+                    </span>
+                    <p>{vote.reason}</p>
+                  </motion.article>
+                );
+              })
+            ) : (
+              <div className="simple-empty">
+                {data?.votes.length
+                  ? "선택한 모델의 선정 사유가 없습니다."
+                  : "아직 등록된 선정 사유가 없습니다."}
+              </div>
+            )}
+          </div>
         </div>
+        {visibleReasons.length > 0 && (
+          <nav className="reason-pagination" aria-label="선정 사유 페이지">
+            <button
+              type="button"
+              aria-label="이전 페이지"
+              disabled={currentReasonPage === 1}
+              onClick={() =>
+                setReasonPage(Math.max(1, currentReasonPage - 1))
+              }
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <span>
+              <strong>{currentReasonPage}</strong>
+              <i>/</i>
+              {totalReasonPages}
+            </span>
+            <button
+              type="button"
+              aria-label="다음 페이지"
+              disabled={currentReasonPage === totalReasonPages}
+              onClick={() =>
+                setReasonPage(
+                  Math.min(totalReasonPages, currentReasonPage + 1),
+                )
+              }
+            >
+              <ChevronRight size={17} />
+            </button>
+          </nav>
+        )}
       </section>
     </div>
   );
