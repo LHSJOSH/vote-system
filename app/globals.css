@@ -215,6 +215,35 @@ a {
   letter-spacing: 0.12em;
 }
 
+.step-heading__thumbnail {
+  display: block;
+  width: clamp(77px, 6vw, 91px);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background-color: rgb(15 16 21 / 82%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 10%),
+    0 14px 34px rgb(0 0 0 / 30%);
+}
+
+.step-heading[data-has-thumbnail="true"] {
+  text-align: center;
+}
+
+.step-heading[data-has-thumbnail="true"] .eyebrow {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.step-heading[data-has-thumbnail="true"] p {
+  margin-inline: auto;
+}
+
 .step-heading h1,
 .processing-panel h1,
 .complete-panel h1 {
@@ -481,6 +510,29 @@ a {
   align-content: center;
   gap: 14px;
   margin: -30px auto 0;
+}
+
+.reason-step:has(.step-heading__thumbnail) {
+  display: grid;
+  min-height: calc(100dvh - 118px);
+  grid-template:
+    "reason-heading" minmax(0, 1fr)
+    "reason-form" auto
+    / minmax(0, 1fr);
+}
+
+.reason-step:has(.step-heading__thumbnail) > .step-heading {
+  grid-area: reason-heading;
+  place-self: center;
+  margin: 0 auto;
+}
+
+.reason-step:has(.step-heading__thumbnail) > .reason-form-stage {
+  grid-area: reason-form;
+  min-height: 0;
+  align-self: end;
+  align-content: end;
+  margin: 0 auto;
 }
 
 .reason-form-control .field-group {
@@ -2364,8 +2416,9 @@ a {
   }
 
   .step-progress {
-    width: calc(100% - 92px);
-    margin-left: 0;
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
   }
 
   .admin-corner-link {
@@ -2400,9 +2453,28 @@ a {
     text-align: left;
   }
 
+  .reason-step > .step-heading {
+    text-align: center;
+  }
+
   .intro-step > .step-heading p,
   .reason-step > .step-heading p {
     margin-inline: 0;
+  }
+
+  .reason-step > .step-heading p {
+    margin-inline: auto;
+    font-size: clamp(9px, 2.7vw, 13px);
+    white-space: nowrap;
+  }
+
+  .reason-step > .step-heading h1 {
+    font-size: clamp(20px, 7vw, 32px);
+    white-space: nowrap;
+  }
+
+  .reason-step > .step-heading h1 br {
+    display: none;
   }
 
   .intro-form-stage {
@@ -2469,7 +2541,7 @@ a {
     bottom: 12px;
     margin-top: 22px;
     padding: 10px;
-    border: 1px solid var(--border);
+    border: 0;
     border-radius: 17px;
     background: rgb(21 22 27 / 90%);
     backdrop-filter: blur(18px);
@@ -2672,7 +2744,7 @@ a {
 
 @media (max-width: 430px) {
   .step-progress {
-    width: calc(100% - 72px);
+    width: 100%;
   }
 
   .step-heading h1 {

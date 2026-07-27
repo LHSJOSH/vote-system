@@ -75,18 +75,32 @@ function StepProgress({ step }: { step: Step }) {
 
 function StepHeading({
   eyebrow,
+  thumbnailUrl,
   title,
   description,
 }: {
   eyebrow: string;
+  thumbnailUrl?: string;
   title: React.ReactNode;
   description: string;
 }) {
   return (
-    <header className="step-heading">
+    <header
+      className="step-heading"
+      data-has-thumbnail={thumbnailUrl ? "true" : undefined}
+    >
       <span className="eyebrow">
-        <Sparkles size={14} />
-        {eyebrow}
+        {thumbnailUrl ? (
+          <span
+            className="step-heading__thumbnail"
+            style={{ backgroundImage: `url("${thumbnailUrl}")` }}
+            role="img"
+            aria-label={`${eyebrow} 썸네일`}
+          />
+        ) : (
+          <Sparkles size={14} />
+        )}
+        {!thumbnailUrl && eyebrow}
       </span>
       <h1>{title}</h1>
       <p>{description}</p>
@@ -550,7 +564,8 @@ export function SurveyApp() {
               <form className="reason-step" onSubmit={submitVote}>
                 <StepHeading
                   eyebrow={selectedOption?.name ?? "YOUR PICK"}
-                  title={<>왜 이 모델을<br />선택했나요?</>}
+                  thumbnailUrl={selectedOption?.imageUrl}
+                  title={<>왜 이 모델을 <br />선택했나요?</>}
                   description="직접 사용하며 느낀 장점이나 인상 깊었던 순간을 들려주세요."
                 />
                 <div className="reason-form-stage">
