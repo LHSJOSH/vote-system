@@ -5,6 +5,7 @@ import {
   type FormEvent,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -284,6 +285,10 @@ function ResultsView() {
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reasonModel, setReasonModel] = useState("all");
+  const [reasonOrder, setReasonOrder] = useState<"newest" | "oldest">(
+    "newest",
+  );
 
   async function load(silent = false) {
     if (!silent) setLoading(true);
@@ -323,6 +328,29 @@ function ResultsView() {
     maxVotes > 0
       ? (data?.results.filter((result) => result.votes === maxVotes) ?? [])
       : [];
+  const optionById = useMemo(
+    () =>
+      new Map(
+        (data?.results ?? []).map((result) => [
+          result.option.id,
+          result.option,
+        ]),
+      ),
+    [data?.results],
+  );
+  const visibleReasons = useMemo(() => {
+    const votes =
+      reasonModel === "all"
+        ? [...(data?.votes ?? [])]
+        : (data?.votes ?? []).filter(
+            (vote) => vote.optionId === reasonModel,
+          );
+    return votes.sort((a, b) => {
+      const difference =
+        new Date(b.votedAtIso).getTime() - new Date(a.votedAtIso).getTime();
+      return reasonOrder === "newest" ? difference : -difference;
+    });
+  }, [data?.votes, reasonModel, reasonOrder]);
 
   return (
     <div className="simple-results-content">
@@ -364,31 +392,67 @@ function ResultsView() {
       </section>
 
       <section className="reason-list-section">
-        <div className="simple-section-heading">
+        <div className="simple-section-heading reason-list-heading">
           <div>
             <span>WHY THEY PICKED</span>
             <h2>선정 사유</h2>
           </div>
+          <div className="reason-list-tools">
+            <select
+              aria-label="모델별 선정 사유 필터"
+              value={reasonModel}
+              onChange={(event) => setReasonModel(event.target.value)}
+            >
+              <option value="all">전체 모델</option>
+              {(data?.results ?? []).map((result) => (
+                <option key={result.option.id} value={result.option.id}>
+                  {result.option.name}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="선정 사유 정렬"
+              value={reasonOrder}
+              onChange={(event) =>
+                setReasonOrder(event.target.value as "newest" | "oldest")
+              }
+            >
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+            </select>
+          </div>
         </div>
         <div className="simple-reason-list">
-          {data?.votes.length ? (
-            data.votes.map((vote, index) => (
-              <motion.article
-                key={vote.submissionId}
-                className="simple-reason"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.035, 0.35) }}
-              >
-                <div className="simple-reason__meta">
-                  <strong>{vote.nickname}</strong>
-                  <span>{vote.optionName}</span>
-                </div>
-                <p>{vote.reason}</p>
-              </motion.article>
-            ))
+          {visibleReasons.length ? (
+            visibleReasons.map((vote, index) => {
+              const option = optionById.get(vote.optionId);
+              return (
+                <motion.article
+                  key={vote.submissionId}
+                  className="simple-reason"
+                  style={
+                    {
+                      "--reason-color": option?.color ?? "#7c8794",
+                    } as CSSProperties
+                  }
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(index * 0.035, 0.35) }}
+                >
+                  <div className="simple-reason__meta">
+                    <strong>{vote.nickname}</strong>
+                    <span>{vote.optionName}</span>
+                  </div>
+                  <p>{vote.reason}</p>
+                </motion.article>
+              );
+            })
           ) : (
-            <div className="simple-empty">아직 등록된 선정 사유가 없습니다.</div>
+            <div className="simple-empty">
+              {data?.votes.length
+                ? "선택한 모델의 선정 사유가 없습니다."
+                : "아직 등록된 선정 사유가 없습니다."}
+            </div>
           )}
         </div>
       </section>

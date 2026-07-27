@@ -2081,17 +2081,53 @@ a {
   border-top: 1px solid var(--border);
 }
 
+.reason-list-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.reason-list-tools select {
+  min-width: 128px;
+  height: 42px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  outline: none;
+  background: var(--surface);
+  color: var(--foreground-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reason-list-tools select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgb(91 160 255 / 12%);
+}
+
 .simple-reason-list {
   display: grid;
 }
 
 .simple-reason {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(100px, 160px) minmax(0, 1fr);
   gap: 28px;
   align-items: start;
-  padding: 22px 4px;
+  padding: 22px 4px 22px 16px;
   border-bottom: 1px solid rgb(255 255 255 / 7%);
+}
+
+.simple-reason::before {
+  position: absolute;
+  top: 22px;
+  bottom: 22px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--reason-color);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--reason-color) 38%, transparent);
+  content: "";
 }
 
 .simple-reason__meta {
@@ -2109,8 +2145,8 @@ a {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  background: var(--surface-elevated);
-  color: var(--foreground-secondary);
+  background: color-mix(in srgb, var(--reason-color) 18%, var(--surface-elevated));
+  color: color-mix(in srgb, var(--reason-color) 58%, white);
   font-size: 11px;
   font-weight: 650;
 }
@@ -2735,10 +2771,29 @@ a {
     padding-top: 38px;
   }
 
+  .reason-list-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reason-list-tools {
+    width: 100%;
+  }
+
+  .reason-list-tools select {
+    min-width: 0;
+    flex: 1;
+  }
+
   .simple-reason {
     grid-template-columns: 1fr;
     gap: 10px;
-    padding: 19px 2px;
+    padding: 19px 2px 19px 16px;
+  }
+
+  .simple-reason::before {
+    top: 19px;
+    bottom: 19px;
   }
 }
 
@@ -2814,6 +2869,25 @@ a {
 
   .response-tools select {
     min-height: 36px;
+  }
+}
+
+@media (display-mode: standalone) and (max-width: 720px) {
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  .survey-shell {
+    padding-top: max(24px, calc(env(safe-area-inset-top) + 16px));
+    padding-bottom: max(72px, calc(env(safe-area-inset-bottom) + 56px));
+  }
+
+  .bottom-actions {
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .simple-results-header {
+    padding-top: max(14px, env(safe-area-inset-top));
   }
 }
 
