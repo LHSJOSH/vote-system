@@ -1,11 +1,11 @@
 import { getOptions, getVoteBySubmissionId } from "@/lib/supabase";
-import { getVoteIdentityToday } from "@/lib/security";
+import { getVoteIdentityForCurrentWeek } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const identity = await getVoteIdentityToday();
+    const identity = await getVoteIdentityForCurrentWeek();
     const [options, existingVote] = await Promise.all([
       getOptions(),
       identity

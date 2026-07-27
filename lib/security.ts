@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { getKstDateKey, getNextKstMidnight } from "@/lib/kst";
+import { getKstWeekStartKey, getNextKstMonday } from "@/lib/kst";
 
 export const ADMIN_COOKIE = "ai_vote_admin";
 export const ADMIN_ATTEMPT_COOKIE = "ai_vote_admin_attempt";
@@ -69,15 +69,14 @@ export async function isAdminAuthenticated() {
   );
 }
 
-export async function hasVotedToday() {
-  return Boolean(await getVoteIdentityToday());
-}
-
-export async function getVoteIdentityToday() {
+export async function getVoteIdentityForCurrentWeek() {
   const token = (await cookies()).get(VOTE_COOKIE)?.value;
-  const payload = verifyToken<{ kstDate: string; submissionId: string }>(token);
+  const payload = verifyToken<{
+    weekStart: string;
+    submissionId: string;
+  }>(token);
   if (
-    payload?.kstDate !== getKstDateKey() ||
+    payload?.weekStart !== getKstWeekStartKey() ||
     typeof payload.submissionId !== "string"
   ) {
     return null;
@@ -101,6 +100,6 @@ export function voteCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
-    expires: getNextKstMidnight(),
+    expires: getNextKstMonday(),
   };
 }

@@ -6,10 +6,10 @@
 
 - 닉네임 → 3D 모델 선택 → 선정 이유 → 5초 처리 → 완료의 5단계 설문
 - CSS 3D + GSAP 선택지와 Framer Motion 화면 전환
-- 기기당 KST 하루 1회 투표
+- 같은 사용자의 재투표 시 최신 내용으로 갱신
 - 관리자 PIN 로그인과 선택지 CRUD
 - 3초 polling 기반 실시간 3D 가로 막대 및 개별 응답
-- KST 날짜 경계 필터와 Vercel Cron 기반 전날 투표 초기화
+- 월요일 KST 날짜 경계 필터와 Vercel Cron 기반 주간 투표 초기화
 
 ## Supabase 준비
 
@@ -43,9 +43,9 @@ npm run dev
 - 사용자 설문: `http://localhost:3000`
 - 관리자 콘솔: `http://localhost:3000/admin`
 
-## 일일 초기화
+## 주간 초기화
 
-`vercel.json`은 매일 `15:00 UTC`에 `/api/cron/reset`을 호출합니다. 이는 KST 자정입니다. Vercel Hobby에서는 실행이 해당 시간대 안에서 지연될 수 있으므로 모든 결과 API는 `kst_date`가 현재 날짜인 투표만 집계합니다.
+`vercel.json`은 매주 일요일 `15:00 UTC`에 `/api/cron/reset`을 호출합니다. 이는 월요일 `00:00 KST`입니다. 초기화 API는 `votes` 테이블의 투표 데이터만 삭제하며 `options` 테이블의 투표 항목은 유지합니다. Vercel Cron 실행이 조금 지연되더라도 결과 API는 현재 KST 주의 월요일 이후 데이터만 집계합니다.
 
 로컬에서 Cron을 검증하려면 다음처럼 호출합니다.
 

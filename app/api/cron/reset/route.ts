@@ -1,4 +1,4 @@
-import { resetStaleVotes } from "@/lib/supabase";
+import { resetWeeklyVotes } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +12,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    return Response.json({ success: true, ...(await resetStaleVotes()) });
+    return Response.json({ success: true, ...(await resetWeeklyVotes()) });
   } catch (error) {
-    console.error("Daily reset failed", error);
+    console.error("Weekly reset failed", error);
     return Response.json(
-      { error: "일일 초기화에 실패했습니다." },
+      { error: "주간 초기화에 실패했습니다." },
       { status: 500 },
     );
   }

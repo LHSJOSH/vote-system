@@ -4,6 +4,8 @@ import {
   type CSSProperties,
   type FormEvent,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -167,46 +169,110 @@ function VerticalBar({
   );
 }
 
-function WinnerLoop({ winner }: { winner?: ResultItem }) {
+function SingleLineModelName({
+  children,
+  maxSize,
+}: {
+  children: string;
+  maxSize: number;
+}) {
+  const textRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const text = textRef.current;
+    const container = text?.parentElement;
+    if (!text || !container) return;
+
+    let cancelled = false;
+    const fitText = () => {
+      text.style.fontSize = `${maxSize}px`;
+      const availableWidth = text.clientWidth;
+      const requiredWidth = text.scrollWidth;
+
+      if (availableWidth > 0 && requiredWidth > availableWidth) {
+        const fittedSize = maxSize * (availableWidth / requiredWidth) * 0.98;
+        text.style.fontSize = `${Math.max(1, fittedSize)}px`;
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(fitText);
+    resizeObserver.observe(container);
+    fitText();
+
+    void document.fonts.ready.then(() => {
+      if (!cancelled) fitText();
+    });
+
+    return () => {
+      cancelled = true;
+      resizeObserver.disconnect();
+    };
+  }, [children, maxSize]);
+
+  return (
+    <strong ref={textRef} className="winner-loop-card__name">
+      {children}
+    </strong>
+  );
+}
+
+function WinnerLoop({ winners }: { winners: ResultItem[] }) {
   const reduceMotion = useReducedMotion();
+  const isTie = winners.length > 1;
 
   return (
     <section className="winner-section">
       <span className="eyebrow">BIWEEKLY BEST MODEL</span>
       <h2>격주 최고의 모델</h2>
-      {winner ? (
-        <motion.div
-          className="winner-loop-card"
-          style={{ "--winner-color": winner.option.color } as CSSProperties}
-          animate={
-            reduceMotion
-              ? undefined
-              : {
-                  y: [0, -10, 0],
-                  rotate: [-0.7, 0.7, -0.7],
-                  scale: [1, 1.015, 1],
+      {winners.length ? (
+        <div className="winner-loop-grid" data-count={winners.length}>
+          {winners.map((winner, index) => (
+            <motion.article
+              key={winner.option.id}
+              className="winner-loop-card"
+              style={
+                { "--winner-color": winner.option.color } as CSSProperties
+              }
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      y: [0, -10, 0],
+                      rotate: [-0.7, 0.7, -0.7],
+                      scale: [1, 1.015, 1],
+                    }
+              }
+              transition={{
+                duration: 4.2,
+                delay: index * 0.28,
+                ease: "easeInOut",
+                repeat: Infinity,
+              }}
+            >
+              <div
+                className="winner-loop-card__image"
+                data-empty={!winner.option.imageUrl}
+                style={
+                  winner.option.imageUrl
+                    ? { backgroundImage: `url("${winner.option.imageUrl}")` }
+                    : undefined
                 }
-          }
-          transition={{ duration: 4.2, ease: "easeInOut", repeat: Infinity }}
-        >
-          <div
-            className="winner-loop-card__image"
-            data-empty={!winner.option.imageUrl}
-            style={
-              winner.option.imageUrl
-                ? { backgroundImage: `url("${winner.option.imageUrl}")` }
-                : undefined
-            }
-            role="img"
-            aria-label={`${winner.option.name} 이미지`}
-          >
-            {!winner.option.imageUrl && winner.option.name.slice(0, 1)}
-          </div>
-          <div>
-            <span>현재 1위 · {winner.votes}표</span>
-            <strong>{winner.option.name}</strong>
-          </div>
-        </motion.div>
+                role="img"
+                aria-label={`${winner.option.name} 이미지`}
+              >
+                {!winner.option.imageUrl && winner.option.name.slice(0, 1)}
+              </div>
+              <div>
+                <span>
+                  {isTie ? "공동 1위" : "현재 1위"} · {winner.votes}표
+                </span>
+                <SingleLineModelName maxSize={isTie ? 40 : 48}>
+                  {winner.option.name}
+                </SingleLineModelName>
+              </div>
+            </motion.article>
+          ))}
+        </div>
       ) : (
         <div className="winner-empty">첫 투표를 기다리고 있어요.</div>
       )}
@@ -253,12 +319,15 @@ function ResultsView() {
     0,
     ...(data?.results.map((result) => result.votes) ?? []),
   );
-  const winner = data?.results.find((result) => result.votes > 0);
+  const winners =
+    maxVotes > 0
+      ? (data?.results.filter((result) => result.votes === maxVotes) ?? [])
+      : [];
 
   return (
     <div className="simple-results-content">
       {error && <p className="admin-alert">{error}</p>}
-      <WinnerLoop winner={winner} />
+      <WinnerLoop winners={winners} />
 
       <section className="vertical-chart-section">
         <div className="simple-section-heading">

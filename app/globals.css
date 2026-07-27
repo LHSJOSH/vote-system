@@ -874,8 +874,17 @@ a {
   background: #050608;
   color: #ffffff;
   box-shadow:
+    0 0 0 1px rgb(255 255 255 / 10%),
+    0 0 18px rgb(255 255 255 / 30%),
+    0 0 46px rgb(255 255 255 / 16%),
     0 24px 60px rgb(0 0 0 / 45%),
-    inset 0 1px rgb(255 255 255 / 9%);
+    inset 0 1px rgb(255 255 255 / 14%);
+}
+
+.complete-check svg {
+  filter:
+    drop-shadow(0 0 5px rgb(255 255 255 / 72%))
+    drop-shadow(0 0 12px rgb(255 255 255 / 30%));
 }
 
 .admin-corner-link,
@@ -1785,16 +1794,31 @@ a {
   letter-spacing: -0.06em;
 }
 
+.winner-loop-grid {
+  display: grid;
+  width: 100%;
+  max-width: 1120px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  grid-auto-rows: 1fr;
+  gap: clamp(16px, 2.2vw, 28px);
+  align-items: stretch;
+  margin: 0 auto;
+}
+
+.winner-loop-grid[data-count="1"] {
+  max-width: 620px;
+}
+
 .winner-loop-card {
   position: relative;
   display: grid;
-  width: min(100%, 620px);
+  width: 100%;
+  height: 100%;
   min-height: 210px;
-  grid-template-columns: 180px minmax(0, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(112px, 180px) minmax(0, 1fr);
+  gap: clamp(18px, 2.4vw, 32px);
   align-items: center;
-  margin: 0 auto;
-  padding: 22px;
+  padding: clamp(16px, 2vw, 22px);
   border-radius: 34px;
   background:
     radial-gradient(circle at 20% 50%, color-mix(in srgb, var(--winner-color) 22%, transparent), transparent 42%),
@@ -1817,12 +1841,13 @@ a {
 
 .winner-loop-card__image {
   display: grid;
-  width: 180px;
-  height: 166px;
+  width: 100%;
+  aspect-ratio: 1;
   place-items: center;
   border-radius: 24px;
   background-position: center;
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-size: contain;
   color: white;
   font-size: 54px;
   font-weight: 760;
@@ -1838,6 +1863,7 @@ a {
 .winner-loop-card > div:last-child {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .winner-loop-card > div:last-child span {
@@ -1846,12 +1872,16 @@ a {
   font-weight: 700;
 }
 
-.winner-loop-card > div:last-child strong {
-  overflow: hidden;
-  font-size: clamp(30px, 4vw, 48px);
+.winner-loop-card__name {
+  display: block;
+  width: 100%;
+  line-height: 1.08;
   letter-spacing: -0.06em;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.winner-loop-grid:not([data-count="1"]) .winner-loop-card {
+  grid-template-columns: minmax(104px, 140px) minmax(0, 1fr);
 }
 
 .winner-empty {
@@ -1965,7 +1995,7 @@ a {
   height: 100%;
   overflow: hidden;
   border-radius: 16px 16px 4px 4px;
-  background: rgb(255 255 255 / 3%);
+  background: transparent;
 }
 
 .vertical-result__bar {
@@ -2585,15 +2615,15 @@ a {
 
   .winner-loop-card {
     min-height: 164px;
-    grid-template-columns: 120px minmax(0, 1fr);
+    grid-template-columns: minmax(94px, 120px) minmax(0, 1fr);
     gap: 18px;
     padding: 16px;
     border-radius: 25px;
   }
 
   .winner-loop-card__image {
-    width: 120px;
-    height: 132px;
+    width: 100%;
+    aspect-ratio: 1;
     border-radius: 18px;
   }
 

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { saveVote } from "@/lib/supabase";
-import { formatKstTimestamp, getKstDateKey } from "@/lib/kst";
 import {
-  getVoteIdentityToday,
+  formatKstTimestamp,
+  getKstDateKey,
+  getKstWeekStartKey,
+} from "@/lib/kst";
+import {
+  getVoteIdentityForCurrentWeek,
   signToken,
   VOTE_COOKIE,
   voteCookieOptions,
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const identity = await getVoteIdentityToday();
+    const identity = await getVoteIdentityForCurrentWeek();
     const result = await saveVote({
       submissionId: identity?.submissionId ?? parsed.data.submissionId,
       nickname: parsed.data.nickname,
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
     response.cookies.set(
       VOTE_COOKIE,
       signToken({
-        kstDate: getKstDateKey(now),
+        weekStart: getKstWeekStartKey(now),
         submissionId: result.vote.submissionId,
       }),
       voteCookieOptions(),

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getKstDateKey } from "@/lib/kst";
+import { getKstWeekStartKey } from "@/lib/kst";
 import type {
   AiOption,
   ResultItem,
@@ -190,12 +190,12 @@ export async function uploadModelImage(file: File) {
   return data.publicUrl;
 }
 
-export async function getVotes(date?: string) {
+export async function getVotes(fromDate?: string) {
   let query = getSupabaseAdmin()
     .from("votes")
     .select("*")
     .order("voted_at", { ascending: false });
-  if (date) query = query.eq("kst_date", date);
+  if (fromDate) query = query.gte("kst_date", fromDate);
   const { data, error } = await query;
   throwIfError(error);
   return ((data ?? []) as VoteRow[]).map(voteFromRow);
@@ -206,7 +206,7 @@ export async function getVoteBySubmissionId(submissionId: string) {
     .from("votes")
     .select("*")
     .eq("submission_id", submissionId)
-    .eq("kst_date", getKstDateKey())
+    .gte("kst_date", getKstWeekStartKey())
     .maybeSingle();
   throwIfError(error);
   return data ? voteFromRow(data as VoteRow) : null;
@@ -249,10 +249,10 @@ export async function saveVote(vote: VoteRecord) {
 }
 
 export async function getResults(): Promise<ResultsPayload> {
-  const today = getKstDateKey();
+  const weekStart = getKstWeekStartKey();
   const [options, votes] = await Promise.all([
     getOptions(true),
-    getVotes(today),
+    getVotes(weekStart),
   ]);
   const totalVotes = votes.length;
   const results: ResultItem[] = options
@@ -271,7 +271,7 @@ export async function getResults(): Promise<ResultsPayload> {
     );
 
   return {
-    date: today,
+    date: weekStart,
     totalVotes,
     results,
     votes,
@@ -279,21 +279,22 @@ export async function getResults(): Promise<ResultsPayload> {
   };
 }
 
-export async function resetStaleVotes() {
-  const today = getKstDateKey();
+export async function resetWeeklyVotes() {
   const { count, error } = await getSupabaseAdmin()
     .from("votes")
     .delete({ count: "exact" })
-    .lt("kst_date", today);
+    .not("submission_id", "is", null);
   throwIfError(error);
-  const { count: preserved, error: countError } = await getSupabaseAdmin()
-    .from("votes")
-    .select("submission_id", { count: "exact", head: true })
-    .eq("kst_date", today);
+
+  const { count: optionsPreserved, error: countError } =
+    await getSupabaseAdmin()
+      .from("options")
+      .select("id", { count: "exact", head: true });
   throwIfError(countError);
+
   return {
-    date: today,
+    weekStart: getKstWeekStartKey(),
     removed: count ?? 0,
-    preserved: preserved ?? 0,
+    optionsPreserved: optionsPreserved ?? 0,
   };
 }
